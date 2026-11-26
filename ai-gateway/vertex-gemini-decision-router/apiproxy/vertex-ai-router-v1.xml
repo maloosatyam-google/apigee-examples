@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <APIProxy revision="1" name="vertex-ai-router-v1">
   <DisplayName>Vertex AI Gemini Gateway with Gemini Decision 1 Auto-Routing</DisplayName>
-  <Description>Apigee AI Gateway built on vertex-ai-v1 with zero-output-token auto-routing via Gemini Decision 1 (POST /v1beta/decisions), persona-based API Product model maps, API Key verification, Spike Arrest, LLM Token Quota, toggleable Model Armor (buffered + SSE ContinuousScan), Data Capture, and Cloud Logging.</Description>
+  <Description>Apigee AI Gateway built on vertex-ai-v1 with zero-output-token auto-routing via Gemini Decision 1 (POST /v1beta/decisions), persona-based API Product model maps, API Key verification, Spike Arrest, LLM Token Quota (buffered + SSE), Data Capture, and Cloud Logging.</Description>
   <BasePaths>/vertex-router/v1</BasePaths>
   <Policies>
     <Policy>AM-PrepRouterRequest</Policy>
     <Policy>AM-RemoveAuthorization</Policy>
-    <Policy>AM-ResolveGuardrailToggles</Policy>
     <Policy>AM-RouteGeminiTarget</Policy>
     <Policy>AM-SetResponseHeaders</Policy>
     <Policy>DC-FaultAnalytics</Policy>
@@ -25,9 +24,6 @@
     <Policy>RF-UnsupportedPath</Policy>
     <Policy>SA-SpikeArrest</Policy>
     <Policy>SC-ModelRouter</Policy>
-    <Policy>SMR-SanitizeModelResponse</Policy>
-    <Policy>SMR-SanitizeModelResponseSSE</Policy>
-    <Policy>SUP-UserPrompt</Policy>
     <Policy>VA-VerifyAPIKey</Policy>
   </Policies>
   <ProxyEndpoints>

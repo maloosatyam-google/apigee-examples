@@ -12,7 +12,6 @@
       <Header name="x-gateway-router-complexity">{flow.routerComplexity}</Header>
       <Header name="x-gateway-router-input-tokens">{flow.routerInputTokens}</Header>
       <Header name="x-gateway-router-output-tokens">{flow.routerOutputTokens}</Header>
-      <Header name="x-gateway-guardrails">armor-prompt={flow.guardrail.armorPrompt};armor-response={flow.guardrail.armorResponse}</Header>
       <Header name="x-gateway-prompt-tokens">{flow.promptTokenCount}</Header>
       <Header name="x-gateway-candidates-tokens">{flow.candidatesTokenCount}</Header>
       <Header name="x-gateway-thoughts-tokens">{flow.thoughtsTokenCount}</Header>

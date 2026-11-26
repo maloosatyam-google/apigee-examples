@@ -1,6 +1,6 @@
 # Vertex AI Gemini Gateway with Gemini Decision 1 Auto-Routing
 
-An enterprise **Apigee X AI Gateway** example built directly on the **`vertex-ai-v1`** governance base and extended with **zero-output-token intelligent auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)**.
+An **Apigee X AI Gateway** example built on the **`vertex-ai-v1`** proxy base and extended with **zero-output-token intelligent auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)**.
 
 Callers send prompts to a single `/models/auto:generateContent` or `/models/auto:streamGenerateContent?alt=sse` endpoint. In a single prefill pass (`0` output tokens), **Gemini Decision 1** (`POST https://generativelanguage.googleapis.com/v1beta/decisions`) evaluates both a calibrated **routing category** (`choice`) and **reasoning complexity** (`score`), and Apigee maps that decision to the optimal **Gemini 4** model configured on the caller's **API Product**.
 
@@ -14,7 +14,6 @@ Callers send prompts to a single `/models/auto:generateContent` or `/models/auto
 | **Zero-output-token smart routing (`/models/auto`)** | Routes greetings/lookups to cheap Flash-Lite, everyday chat to Hydrogen, coding to Argon, and hard reasoning/proofs to Carbon | `AM-PrepRouterRequest` + `SC-ModelRouter` (`gemini-decision-1`) + `JS-AutoRouting` |
 | **Per-team model tiers without proxy redeployments** | Engineering & Support can call the exact same `/models/auto` endpoint and land on different model tiers based on their API key | API Product custom attributes (`routing.model.<category>`, `routing.confidence.min`) |
 | **Traffic spike & token budget enforcement** | Stops runaway client loops before calling either the router or Vertex AI, and counts tokens across buffered & SSE streams | `SA-SpikeArrest` + `LTQ-TokenEnforce` / `LTQ-TokenCount` / `LTQ-TokenCountSSE` |
-| **Toggleable prompt & streaming response guardrails** | Screens prompts for jailbreaks/injection and scans live SSE chunks via Google Cloud Model Armor (toggleable per API Product) | `AM-ResolveGuardrailToggles` + `SUP-UserPrompt` + `SMR-SanitizeModelResponse` + `SMR-SanitizeModelResponseSSE` (`<ContinuousScan>`) |
 | **Buffered & live SSE streaming parity** | Dedicated buffered and 300s SSE streaming targets prevent buffering delays while capturing unified analytics & Cloud Logs | `gemini-vertex-target` + `gemini-vertex-stream-target` (`<EventFlow>`) + `DC-ModelAnalytics` + `ML-CloudLogging` |
 
 ---
@@ -26,25 +25,17 @@ sequenceDiagram
     autonumber
     participant Client as Client / SDK (x-apikey)
     participant Apigee as Apigee X (vertex-ai-router-v1)
-    participant Armor as Model Armor (Optional)
     participant Decision as Gemini Decision 1 (/v1beta/decisions)
     participant Vertex as Vertex AI Gemini (Gemini 4 / 3.5)
 
     Client->>Apigee: POST /vertex-router/v1/models/auto:generateContent
-    Note over Apigee: 1. VerifyAPIKey, SpikeArrest,<br/>ResolveGuardrailToggles, ExtractPrompt
-    opt guardrail.modelArmor.prompt == "on"
-        Apigee->>Armor: SanitizeUserPrompt
-        Armor-->>Apigee: Pass (or 4xx Block)
-    end
+    Note over Apigee: 1. VerifyAPIKey, SpikeArrest, ExtractPromptAndModel
     Note over Apigee: 2. LLMTokenQuota (EnforceOnly on "auto")
     Apigee->>Decision: POST /v1beta/decisions (choice: category + score: complexity)
     Decision-->>Apigee: Calibrated probabilities + confidence (0 output tokens)
     Note over Apigee: 3. JS-AutoRouting resolves API Product<br/>routing.model.<category> (with confidence check)
     Apigee->>Vertex: POST .../models/{flow.target_model}:generateContent (or :streamGenerateContent?alt=sse)
     Vertex-->>Apigee: Response / SSE Stream
-    opt guardrail.modelArmor.response == "on"
-        Apigee->>Armor: SanitizeModelResponse (Buffered or SSE ContinuousScan)
-    end
     Note over Apigee: 4. LLMTokenQuota (CountOnly on "auto"),<br/>DataCapture (target_model), CloudLogging
     Apigee-->>Client: Response + x-gateway-router-* & x-gateway-model headers
 ```
@@ -96,14 +87,8 @@ node --test tests/autorouting.test.mjs
 cp .env.example .env
 # Edit .env with APIGEE_ORG, APIGEE_ENV, APIGEE_HOST, and GCP_PROJECT_ID
 
-chmod +x scripts/*.sh
 ./scripts/deploy.sh
 ```
-
-> **Want Model Armor enabled too?** Pass `--create-armor-templates` on first deploy to provision `apigee-sanitize-user-prompt` and `apigee-sanitize-model-response` in `GCP_REGION` and set `guardrail.modelArmor.* = "on"` on both API Products:
-> ```bash
-> ./scripts/deploy.sh --create-armor-templates
-> ```
 
 ### 3. Test Auto-Routing & Direct Calls
 
@@ -132,7 +117,6 @@ x-gateway-router-confidence: 0.98
 x-gateway-router-complexity: 1.92
 x-gateway-router-input-tokens: 214
 x-gateway-router-output-tokens: 0
-x-gateway-guardrails: armor-prompt=off;armor-response=off
 x-gateway-prompt-tokens: 18
 x-gateway-candidates-tokens: 164
 x-gateway-total-tokens: 182

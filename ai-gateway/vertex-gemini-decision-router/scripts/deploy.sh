@@ -4,9 +4,7 @@
 #
 # Usage:
 #   ./scripts/deploy.sh [--org ORG] [--env ENV] [--host HOST] [--project PROJECT]
-#                       [--region REGION] [--sa SA_EMAIL]
-#                       [--enable-model-armor] [--create-armor-templates]
-#                       [--package-only]
+#                       [--sa SA_EMAIL] [--package-only]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,10 +22,7 @@ ORG="${APIGEE_ORG:-}"
 ENV="${APIGEE_ENV:-dev}"
 HOST="${APIGEE_HOST:-}"
 PROJECT="${GCP_PROJECT_ID:-${ORG}}"
-REGION="${GCP_REGION:-us-central1}"
 SA_EMAIL="${PROXY_SA_EMAIL:-}"
-ARMOR="${MODEL_ARMOR:-off}"
-CREATE_ARMOR="${CREATE_ARMOR_TEMPLATES:-false}"
 PACKAGE_ONLY=false
 PROXY_NAME="vertex-ai-router-v1"
 BASE_PATH="/vertex-router/v1"
@@ -39,13 +34,10 @@ while [[ $# -gt 0 ]]; do
     --env) ENV="$2"; shift ;;
     --host) HOST="$2"; shift ;;
     --project) PROJECT="$2"; shift ;;
-    --region) REGION="$2"; shift ;;
     --sa) SA_EMAIL="$2"; shift ;;
-    --enable-model-armor) ARMOR="on" ;;
-    --create-armor-templates) ARMOR="on"; CREATE_ARMOR="true" ;;
     --package-only) PACKAGE_ONLY=true ;;
     -h|--help)
-      sed -n '2,10p' "$0"
+      sed -n '2,8p' "$0"
       exit 0
       ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
@@ -61,21 +53,21 @@ log()  { printf "\n\033[1;34m==>\033[0m %s\n" "$*"; }
 info() { printf "  \033[0;36m[*]\033[0m %s\n" "$*"; }
 ok()   { printf "  \033[1;32m[✓]\033[0m %s\n" "$*"; }
 
-# 1. Render bundle with project/region placeholders & validate strictly
+# 1. Render bundle with project placeholder & validate strictly
 log "1. Rendering & validating Apigee bundle (${PROXY_NAME})"
 rm -rf "${BUILD_DIR}" "${ZIP_PATH}"
 mkdir -p "${BUILD_DIR}"
 cp -R "${EXAMPLE_DIR}/apiproxy" "${BUILD_DIR}/apiproxy"
 
-python3 - "${BUILD_DIR}/apiproxy" "${PROJECT}" "${REGION}" <<'PY'
+python3 - "${BUILD_DIR}/apiproxy" "${PROJECT}" <<'PY'
 import os, sys
-root, project, region = sys.argv[1:4]
+root, project = sys.argv[1:3]
 for dp, _, files in os.walk(root):
     for fn in files:
         if fn.endswith((".xml", ".js")):
             p = os.path.join(dp, fn)
             txt = open(p, encoding="utf-8").read()
-            new_txt = txt.replace("__GCP_PROJECT_ID__", project).replace("__GCP_REGION__", region)
+            new_txt = txt.replace("__GCP_PROJECT_ID__", project)
             if new_txt != txt:
                 open(p, "w", encoding="utf-8").write(new_txt)
 PY
@@ -115,7 +107,6 @@ apigee_call() {
 # 2. Enable required GCP APIs & ensure runtime Service Account
 log "2. Ensuring GCP APIs & Proxy Runtime Service Account on project '${PROJECT}'"
 APIS=("aiplatform.googleapis.com" "generativelanguage.googleapis.com" "logging.googleapis.com" "iam.googleapis.com")
-[[ "${ARMOR}" == "on" ]] && APIS+=("modelarmor.googleapis.com")
 gcloud services enable "${APIS[@]}" --project="${PROJECT}" --quiet
 ok "Enabled APIs: ${APIS[*]}"
 
@@ -127,9 +118,7 @@ if [[ -z "${SA_EMAIL}" ]]; then
       --project="${PROJECT}" \
       --display-name="Apigee Vertex Decision Router Runtime SA"
   fi
-  ROLES=("roles/aiplatform.user" "roles/logging.logWriter")
-  [[ "${ARMOR}" == "on" ]] && ROLES+=("roles/modelarmor.user")
-  for role in "${ROLES[@]}"; do
+  for role in "roles/aiplatform.user" "roles/logging.logWriter"; do
     gcloud projects add-iam-policy-binding "${PROJECT}" \
       --member="serviceAccount:${SA_EMAIL}" \
       --role="${role}" \
@@ -145,27 +134,6 @@ if [[ -z "${SA_EMAIL}" ]]; then
     --quiet >/dev/null
 fi
 ok "Using runtime Service Account: ${SA_EMAIL}"
-
-# Optional: Create Model Armor templates if requested
-if [[ "${CREATE_ARMOR}" == "true" ]]; then
-  log "2b. Ensuring Model Armor templates in ${REGION}"
-  ARMOR_BASE="https://modelarmor.${REGION}.rep.googleapis.com/v1/projects/${PROJECT}/locations/${REGION}/templates"
-  RAI='{"raiFilters":[{"filterType":"HATE_SPEECH","confidenceLevel":"HIGH"},{"filterType":"DANGEROUS","confidenceLevel":"HIGH"},{"filterType":"SEXUALLY_EXPLICIT","confidenceLevel":"HIGH"},{"filterType":"HARASSMENT","confidenceLevel":"HIGH"}]}'
-  PROMPT_CFG="{\"filterConfig\":{\"raiSettings\":${RAI},\"piAndJailbreakFilterSettings\":{\"filterEnforcement\":\"ENABLED\",\"confidenceLevel\":\"HIGH\"},\"maliciousUriFilterSettings\":{\"filterEnforcement\":\"ENABLED\"}}}"
-  RESP_CFG="{\"filterConfig\":{\"raiSettings\":${RAI},\"sdpSettings\":{\"basicConfig\":{\"filterEnforcement\":\"ENABLED\"}}}}"
-  for tmpl in apigee-sanitize-user-prompt apigee-sanitize-model-response; do
-    code=$(curl -4 -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${TOKEN}" "${ARMOR_BASE}/${tmpl}")
-    if [[ "${code}" != "200" ]]; then
-      body="${PROMPT_CFG}"
-      [[ "${tmpl}" == "apigee-sanitize-model-response" ]] && body="${RESP_CFG}"
-      curl -4 -sf -X POST -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" \
-        "${ARMOR_BASE}?templateId=${tmpl}" -d "${body}" >/dev/null
-      ok "Created Model Armor template: ${tmpl}"
-    else
-      ok "Model Armor template exists: ${tmpl}"
-    fi
-  done
-fi
 
 # 3. Ensure Apigee Data Collectors exist
 log "3. Ensuring shared Apigee Data Collectors"
@@ -205,18 +173,15 @@ for _ in $(seq 1 60); do
   sleep 5
 done
 
-# 5. Apply Persona API Products (updating environments and Model Armor toggle)
-log "5. Applying Persona API Products (Model Armor=${ARMOR})"
+# 5. Apply Persona API Products
+log "5. Applying Persona API Products"
 for prod_file in "${EXAMPLE_DIR}/products/engineering_tier.json" "${EXAMPLE_DIR}/products/support_tier.json"; do
   TMP_PROD="$(mktemp)"
-  PROD_NAME=$(python3 - "${prod_file}" "${TMP_PROD}" "${ENV}" "${ARMOR}" <<'PY'
+  PROD_NAME=$(python3 - "${prod_file}" "${TMP_PROD}" "${ENV}" <<'PY'
 import json, sys
-src, dst, env, armor = sys.argv[1:5]
+src, dst, env = sys.argv[1:4]
 data = json.load(open(src, encoding="utf-8"))
 data["environments"] = [env]
-for attr in data.get("attributes", []):
-    if attr["name"] in ("guardrail.modelArmor.prompt", "guardrail.modelArmor.response"):
-        attr["value"] = armor
 json.dump(data, open(dst, "w", encoding="utf-8"), indent=2)
 print(data["name"])
 PY
@@ -278,7 +243,6 @@ cat <<EOF
   Gateway Base URL : ${GATEWAY_URL}
   Engineering Key  : ${ENG_KEY}
   Support Key      : ${SUP_KEY}
-  Model Armor      : ${ARMOR}
 
   Try Auto-Routing via Gemini Decision 1 (0 output tokens):
   curl -si -X POST "${GATEWAY_URL}/models/auto:generateContent" \\
@@ -288,6 +252,6 @@ cat <<EOF
     | grep -iE "^(HTTP/|x-auto-routed|x-gateway-)"
 
   Run full live verification suite:
-  APIGEE_HOST="${HOST:-<APIGEE_HOST>}" ENG_API_KEY="${ENG_KEY}" SUP_API_KEY="${SUP_KEY}" MODEL_ARMOR="${ARMOR}" ./scripts/verify.sh
+  APIGEE_HOST="${HOST:-<APIGEE_HOST>}" ENG_API_KEY="${ENG_KEY}" SUP_API_KEY="${SUP_KEY}" ./scripts/verify.sh
 ================================================================================
 EOF

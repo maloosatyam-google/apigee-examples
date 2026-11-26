@@ -153,7 +153,6 @@ describe("1. ExtractPromptAndModel.js — URI detection, quota_model isolation &
     assert.strictEqual(v["flow.gemini_method"], "generateContent");
     assert.strictEqual(v["flow.quota_model"], "auto");
     assert.strictEqual(v["flow.target_model"], "");
-    assert.strictEqual(v["flow.userPrompt"], "Write unit tests");
     assert.strictEqual(v["flow.routerInput"], "Write unit tests");
   });
 
@@ -212,8 +211,7 @@ describe("1. ExtractPromptAndModel.js — URI detection, quota_model isolation &
         ],
       },
     });
-    assert.ok(!v["flow.userPrompt"].includes("secret chain of thought"));
-    assert.ok(v["flow.userPrompt"].length > 9000, "Model Armor still sees full prompt");
+    assert.ok(!v["flow.routerInput"].includes("secret chain of thought"));
     assert.ok(v["flow.routerInput"].length <= 8010, "Router input is capped for low latency");
     assert.ok(v["flow.routerInput"].startsWith("SYSTEM_CONTEXT_START"));
     assert.ok(v["flow.routerInput"].endsWith("FINAL_CODING_QUESTION: implement quicksort in Rust."));

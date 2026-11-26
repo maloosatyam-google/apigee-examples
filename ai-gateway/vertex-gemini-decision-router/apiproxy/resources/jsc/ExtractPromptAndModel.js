@@ -1,4 +1,4 @@
-// Extract prompt (across systemInstruction + turns) and model/routing metadata from Vertex AI Gemini request (ES5/Rhino)
+// Extract router input (across systemInstruction + turns) and model/routing metadata from Vertex AI Gemini request (ES5/Rhino)
 var pathSuffix = String(context.getVariable("proxy.pathsuffix") || "");
 var altParam = String(context.getVariable("request.queryparam.alt") || "").toLowerCase();
 var isStreaming = /:streamGenerateContent$/i.test(pathSuffix) || (altParam === "sse" && /^\/auto$/i.test(pathSuffix));
@@ -52,7 +52,6 @@ if (reqContent) {
 
     var prompt = promptChunks.join("\n").trim();
     if (prompt) {
-      context.setVariable("flow.userPrompt", prompt);
       // Window huge prompts (head + tail) for low-latency router classification while preserving final instructions
       var routerInput = prompt;
       if (routerInput.length > 8000) {

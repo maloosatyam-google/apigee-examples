@@ -21,10 +21,6 @@
         <Name>JS-ProcessStreamEvent</Name>
       </Step>
       <Step>
-        <Name>SMR-SanitizeModelResponseSSE</Name>
-        <Condition>(flow.guardrail.armorResponse != "off") and (response.event.current.data != null) and (response.event.current.data != "") and (response.event.current.data != "[DONE]")</Condition>
-      </Step>
-      <Step>
         <Name>LTQ-TokenCountSSE</Name>
         <Condition>flow.stream_done = "true"</Condition>
       </Step>

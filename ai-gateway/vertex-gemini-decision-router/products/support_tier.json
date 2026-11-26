@@ -34,14 +34,6 @@
     {
       "name": "routing.confidence.min",
       "value": "0.55"
-    },
-    {
-      "name": "guardrail.modelArmor.prompt",
-      "value": "off"
-    },
-    {
-      "name": "guardrail.modelArmor.response",
-      "value": "off"
     }
   ],
   "operationGroup": {

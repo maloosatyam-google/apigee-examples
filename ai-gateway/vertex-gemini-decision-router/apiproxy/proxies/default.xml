@@ -12,17 +12,10 @@
         <Name>SA-SpikeArrest</Name>
       </Step>
       <Step>
-        <Name>AM-ResolveGuardrailToggles</Name>
-      </Step>
-      <Step>
         <Name>EV-RequestDetails</Name>
       </Step>
       <Step>
         <Name>JS-ExtractPromptAndModel</Name>
-      </Step>
-      <Step>
-        <Name>SUP-UserPrompt</Name>
-        <Condition>(flow.userPrompt != null) and (flow.userPrompt != "") and (flow.guardrail.armorPrompt != "off")</Condition>
       </Step>
       <Step>
         <Name>AM-RemoveAuthorization</Name>
@@ -86,10 +79,6 @@
       <Step>
         <Name>LTQ-TokenCount</Name>
         <Condition>(response.status.code = 200) and (flow.is_streaming != "true")</Condition>
-      </Step>
-      <Step>
-        <Name>SMR-SanitizeModelResponse</Name>
-        <Condition>(response.status.code = 200) and (flow.is_streaming != "true") and (flow.guardrail.armorResponse != "off")</Condition>
       </Step>
       <Step>
         <Name>DC-ModelAnalytics</Name>

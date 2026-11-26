@@ -1,6 +1,6 @@
 # Apigee X & AI Gateway Examples (`apigee-examples`)
 
-Production-ready, self-contained examples for **Google Cloud Apigee X** — covering **AI Gateways**, **intelligent LLM model routing**, **Model Armor guardrails**, **SSE streaming**, **MCP tool governance**, and **enterprise API patterns**.
+Production-ready, self-contained examples for **Google Cloud Apigee X** — covering **AI Gateways**, **intelligent LLM model routing**, **SSE streaming**, **MCP tool governance**, and **enterprise API patterns**.
 
 Every example in this repository targets an **existing Apigee X organization** and ships with:
 - A strictly validated `apiproxy/` bundle (`make validate`)
@@ -14,7 +14,7 @@ Every example in this repository targets an **existing Apigee X organization** a
 
 | Category | Example | Description |
 |---|---|---|
-| **AI Gateway** | [`ai-gateway/vertex-gemini-decision-router`](ai-gateway/vertex-gemini-decision-router) | Built on the **`vertex-ai-v1`** governance base (API Key, Spike Arrest, `LLMTokenQuota`, toggleable **Model Armor** prompt & SSE `ContinuousScan`, `DataCapture`, Cloud Logging) with **zero-output-token auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)** and persona-driven API Product attributes across the **Gemini 4** lineup (`gemini-4-carbon`, `gemini-4-argon`, `gemini-4-hydrogen`, `gemini-3.5-flash-lite`). |
+| **AI Gateway** | [`ai-gateway/vertex-gemini-decision-router`](ai-gateway/vertex-gemini-decision-router) | Built on the **`vertex-ai-v1`** base (API Key, Spike Arrest, `LLMTokenQuota` across buffered & SSE streams, `DataCapture`, Cloud Logging) with **zero-output-token auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)** and persona-driven API Product attributes across the **Gemini 4** lineup (`gemini-4-carbon`, `gemini-4-argon`, `gemini-4-hydrogen`, `gemini-3.5-flash-lite`). |
 
 ---
 
@@ -60,7 +60,7 @@ apigee-examples/
 
 - An existing **Apigee X** organization and environment (with northbound HTTPS access)
 - `gcloud` CLI authenticated (`gcloud auth login`), `curl`, `zip`, `python3`, and `node >= 20` (for offline tests)
-- Permissions on the target GCP project to enable `aiplatform.googleapis.com` and `generativelanguage.googleapis.com` (and optionally `modelarmor.googleapis.com`) and deploy Apigee proxies with a runtime Service Account
+- Permissions on the target GCP project to enable `aiplatform.googleapis.com` and `generativelanguage.googleapis.com` and deploy Apigee proxies with a runtime Service Account
 
 ---
 
