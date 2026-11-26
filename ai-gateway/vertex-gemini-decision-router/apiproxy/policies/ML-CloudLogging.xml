@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MessageLogging continueOnError="true" enabled="true" name="ML-CloudLogging">
+  <DisplayName>ML-CloudLogging</DisplayName>
+  <CloudLogging>
+    <LogName>projects/{organization.name}/logs/apigee</LogName>
+    <Message contentType="application/json">
+      {
+        "organizationName": "{organization.name}",
+        "environmentName": "{environment.name}",
+        "apiProxyName": "{apiproxy.name}",
+        "apiProxyRevision": "{apiproxy.revision}",
+        "proxyPathSuffix": "{proxy.pathsuffix}",
+        "trackingId": "{messageid}",
+        "developerApp": "{developer.app.name}",
+        "apiProduct": "{apiproduct.name}",
+        "autoRouted": "{flow.autoRouted}",
+        "routerEngine": "{flow.routerEngine}",
+        "routerCategory": "{flow.routerCategory}",
+        "routerConfidence": "{flow.routerConfidence}",
+        "routerComplexity": "{flow.routerComplexity}",
+        "routerInputTokens": "{flow.routerInputTokens}",
+        "quotaModel": "{flow.quota_model}",
+        "model": "{flow.target_model}",
+        "streaming": "{flow.is_streaming}",
+        "promptTokens": "{flow.promptTokenCount}",
+        "candidatesTokens": "{flow.candidatesTokenCount}",
+        "thoughtsTokens": "{flow.thoughtsTokenCount}",
+        "totalTokens": "{flow.totalTokenCount}",
+        "responseStatusCode": "{response.status.code}",
+        "errorStatusCode": "{error.status.code}",
+        "faultName": "{fault.name}",
+        "errorMessage": "{escapeJSON(error.message)}"
+      }
+    </Message>
+    <ResourceType>api</ResourceType>
+  </CloudLogging>
+</MessageLogging>

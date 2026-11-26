@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RaiseFault async="false" continueOnError="false" enabled="true" name="RF-UnsupportedPath">
+  <DisplayName>RF-UnsupportedPath</DisplayName>
+  <FaultResponse>
+    <Set>
+      <Headers>
+        <Header name="Content-Type">application/json</Header>
+      </Headers>
+      <Payload contentType="application/json">{
+  "error": {
+    "code": 404,
+    "status": "NOT_FOUND",
+    "message": "Unsupported path or method. Expected POST /models/{model}:generateContent, /models/{model}:streamGenerateContent, /models/auto:generateContent, /models/auto:streamGenerateContent, or /auto.",
+    "requestId": "{messageid}"
+  }
+}</Payload>
+      <StatusCode>404</StatusCode>
+      <ReasonPhrase>Not Found</ReasonPhrase>
+    </Set>
+  </FaultResponse>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

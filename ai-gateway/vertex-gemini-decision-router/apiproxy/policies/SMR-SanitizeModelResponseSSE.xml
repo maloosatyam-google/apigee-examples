@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SanitizeModelResponse async="false" continueOnError="false" enabled="true" name="SMR-SanitizeModelResponseSSE">
+  <DisplayName>SMR-SanitizeModelResponseSSE</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <ModelArmor>
+    <TemplateName>projects/__GCP_PROJECT_ID__/locations/__GCP_REGION__/templates/apigee-sanitize-model-response</TemplateName>
+  </ModelArmor>
+  <LLMResponseSource>{jsonPath('$.candidates[-1].content.parts[-1].text',response.event.current.data,true)}</LLMResponseSource>
+  <ContinuousScan>true</ContinuousScan>
+</SanitizeModelResponse>

@@ -1,0 +1,25 @@
+# OS & Editor
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# Environment & Secrets
+.env
+*.tfvars
+!*.tfvars.example
+*.pem
+*.key
+
+# Build & Package Artifacts
+.build/
+dist/
+*.zip
+
+# Python & Node
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
