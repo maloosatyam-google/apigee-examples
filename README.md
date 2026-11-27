@@ -14,7 +14,8 @@ Every example in this repository targets an **existing Apigee X organization** a
 
 | Category | Example | Description |
 |---|---|---|
-| **AI Gateway** | [`ai-gateway/vertex-gemini-decision-router`](ai-gateway/vertex-gemini-decision-router) | Built on the **`vertex-ai-v1`** base (API Key, Spike Arrest, `LLMTokenQuota` across buffered & SSE streams, `DataCapture`, Cloud Logging) with **zero-output-token auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)** and persona-driven API Product attributes across the **Gemini 4** lineup (`gemini-4-carbon`, `gemini-4-argon`, `gemini-4-hydrogen`, `gemini-3.5-flash-lite`). |
+| **AI Gateway** | [`ai-gateway/vertex-gemini-decision-router`](ai-gateway/vertex-gemini-decision-router) | Built on the **`vertex-ai-v1`** base (API Key, Spike Arrest, `LLMTokenQuota` across buffered & SSE streams, `DataCapture`, Cloud Logging) with **single-pass zero-output-token auto-routing** powered by **Google Gemini Decision 1 (`gemini-decision-1`)** across the **Gemini 4** lineup. |
+| **AI Gateway** | [`ai-gateway/vertex-two-step-decision-router`](ai-gateway/vertex-two-step-decision-router) | **2-step confidence-cascaded auto-routing** on the **`vertex-ai-v1`** base: **Step 1** classifies prompts with **Gemini Decision 1 (`gemini-decision-1`)** in zero output tokens, and ambiguous prompts with **`< 70%` confidence** escalate to **Step 2 (`gemini-3.5-flash-lite`)** on Vertex AI with Step 1's probability distribution as context. |
 
 ---
 
@@ -42,16 +43,22 @@ make test
 
 ```text
 apigee-examples/
-├── Makefile                                     # Root validator & unit test runner
+├── Makefile                                         # Root validator & unit test runner
 ├── scripts/
-│   └── validate_bundle.py                       # Standalone Apigee X bundle & API Product linter (--strict)
+│   └── validate_bundle.py                           # Standalone Apigee X bundle & API Product linter (--strict)
 └── ai-gateway/
-    └── vertex-gemini-decision-router/           # Vertex AI Gemini + Gemini Decision 1 Auto-Router
-        ├── apiproxy/                            # Deployable Apigee X proxy bundle
-        ├── products/                            # Persona-tiered API Products (Engineering vs Support)
-        ├── client/                              # Python SDK & rubric-tuning examples (google-genai >= 3.5.0)
-        ├── scripts/                             # deploy.sh, verify.sh, cleanup.sh
-        └── tests/                               # Offline Node.js unit test suite
+    ├── vertex-gemini-decision-router/               # 1-Step Router: Gemini Decision 1 -> Gemini 4 lineup
+    │   ├── apiproxy/
+    │   ├── products/
+    │   ├── client/
+    │   ├── scripts/
+    │   └── tests/
+    └── vertex-two-step-decision-router/             # 2-Step Cascade: Decision 1 (< 70%) -> Flash-Lite -> Gemini 4
+        ├── apiproxy/
+        ├── products/
+        ├── client/
+        ├── scripts/
+        └── tests/
 ```
 
 ---

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ServiceCallout async="false" continueOnError="true" enabled="true" name="SC-Step2FlashLiteRouter">
+  <DisplayName>SC-Step2FlashLiteRouter</DisplayName>
+  <Properties>
+    <Property name="io.timeout.millis">4000</Property>
+  </Properties>
+  <Request clearPayload="true" variable="routerStep2Request">
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+  </Request>
+  <Response>routerStep2Response</Response>
+  <Timeout>4000</Timeout>
+  <HTTPTargetConnection>
+    <URL>https://aiplatform.googleapis.com/v1/projects/__GCP_PROJECT_ID__/locations/global/publishers/google/models/gemini-3.5-flash-lite:generateContent</URL>
+    <Authentication>
+      <GoogleAccessToken>
+        <Scopes>
+          <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+        </Scopes>
+      </GoogleAccessToken>
+    </Authentication>
+  </HTTPTargetConnection>
+</ServiceCallout>

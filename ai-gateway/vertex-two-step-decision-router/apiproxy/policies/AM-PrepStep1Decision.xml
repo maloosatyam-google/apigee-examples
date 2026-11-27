@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-PrepStep1Decision">
+  <DisplayName>AM-PrepStep1Decision</DisplayName>
+  <AssignTo createNew="true" transport="http" type="request">routerStep1Request</AssignTo>
+  <Set>
+    <Headers>
+      <Header name="Content-Type">application/json</Header>
+    </Headers>
+    <Verb>POST</Verb>
+    <Payload contentType="application/json">{
+  "model": "gemini-decision-1",
+  "input": "{escapeJSON(flow.routerInput)}",
+  "questions": {
+    "category": {
+      "type": "choice",
+      "instructions": "Which single LLM routing category best fits this user request: coding, deep_reasoning, simple, or general?",
+      "criteria": {
+        "coding": "Programming, software engineering, writing, debugging, reviewing, or refactoring code, SQL queries, regular expressions, shell scripts, or API implementations.",
+        "deep_reasoning": "Complex multi-step analysis, system architecture trade-offs, formal proofs, security auditing, mathematical derivation, root-cause diagnosis, or strategic planning.",
+        "simple": "Short greetings, factual trivia, brief definitions, single-sentence translations, or straightforward lookups.",
+        "general": "Everyday writing, drafting emails or memos, summarization, brainstorming, and general conversation not requiring code or deep multi-step reasoning."
+      }
+    },
+    "complexity": {
+      "type": "score",
+      "instructions": "Rate the reasoning depth and technical difficulty required to answer this user request.",
+      "criteria": [
+        "Trivial: greeting, simple fact, or single-step lookup.",
+        "Routine: standard explanation, summarization, or everyday drafting.",
+        "Substantial: multi-step problem solving, non-trivial code implementation, or structured analysis.",
+        "Frontier: deep architectural design, formal proof, security audit, or complex multi-constraint reasoning."
+      ]
+    }
+  }
+}</Payload>
+  </Set>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

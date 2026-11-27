@@ -1,0 +1,127 @@
+{
+  "name": "vertex-two-step-support",
+  "displayName": "Vertex 2-Step Router - Support & Operations",
+  "description": "Cost-optimized Gemini tier with 2-step routing (Step 1: Gemini Decision 1 >= 70% confidence; Step 2: Gemini 3.5 Flash-Lite < 70% confidence): coding -> gemini-4-hydrogen, deep_reasoning -> gemini-4-argon, general -> gemini-3.5-flash-lite, simple -> gemini-3.5-flash-lite.",
+  "approvalType": "auto",
+  "environments": [
+    "dev"
+  ],
+  "attributes": [
+    {
+      "name": "access",
+      "value": "private"
+    },
+    {
+      "name": "persona",
+      "value": "Support & Operations"
+    },
+    {
+      "name": "routing.confidence.threshold",
+      "value": "0.70"
+    },
+    {
+      "name": "routing.model.coding",
+      "value": "gemini-4-hydrogen"
+    },
+    {
+      "name": "routing.model.deep_reasoning",
+      "value": "gemini-4-argon"
+    },
+    {
+      "name": "routing.model.general",
+      "value": "gemini-3.5-flash-lite"
+    },
+    {
+      "name": "routing.model.simple",
+      "value": "gemini-3.5-flash-lite"
+    }
+  ],
+  "operationGroup": {
+    "operationConfigType": "proxy",
+    "operationConfigs": [
+      {
+        "apiSource": "vertex-two-step-router-v1",
+        "operations": [
+          {
+            "resource": "/**",
+            "methods": [
+              "POST"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "llmOperationGroup": {
+    "operationConfigs": [
+      {
+        "apiSource": "vertex-two-step-router-v1",
+        "llmOperations": [
+          {
+            "resource": "/**",
+            "methods": [
+              "POST"
+            ],
+            "model": "auto"
+          }
+        ],
+        "llmTokenQuota": {
+          "limit": "20000",
+          "interval": "1",
+          "timeUnit": "minute"
+        }
+      },
+      {
+        "apiSource": "vertex-two-step-router-v1",
+        "llmOperations": [
+          {
+            "resource": "/**",
+            "methods": [
+              "POST"
+            ],
+            "model": "gemini-4-argon"
+          }
+        ],
+        "llmTokenQuota": {
+          "limit": "10000",
+          "interval": "1",
+          "timeUnit": "minute"
+        }
+      },
+      {
+        "apiSource": "vertex-two-step-router-v1",
+        "llmOperations": [
+          {
+            "resource": "/**",
+            "methods": [
+              "POST"
+            ],
+            "model": "gemini-4-hydrogen"
+          }
+        ],
+        "llmTokenQuota": {
+          "limit": "15000",
+          "interval": "1",
+          "timeUnit": "minute"
+        }
+      },
+      {
+        "apiSource": "vertex-two-step-router-v1",
+        "llmOperations": [
+          {
+            "resource": "/**",
+            "methods": [
+              "POST"
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "llmTokenQuota": {
+          "limit": "25000",
+          "interval": "1",
+          "timeUnit": "minute"
+        }
+      }
+    ]
+  }
+}

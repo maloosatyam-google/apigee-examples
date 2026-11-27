@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ProxyEndpoint name="default">
+  <PreFlow name="PreFlow">
+    <Request>
+      <Step>
+        <Name>EV-ExtractAPIKey</Name>
+      </Step>
+      <Step>
+        <Name>VA-VerifyAPIKey</Name>
+      </Step>
+      <Step>
+        <Name>SA-SpikeArrest</Name>
+      </Step>
+      <Step>
+        <Name>EV-RequestDetails</Name>
+      </Step>
+      <Step>
+        <Name>JS-ExtractPromptAndModel</Name>
+      </Step>
+      <Step>
+        <Name>AM-RemoveAuthorization</Name>
+      </Step>
+    </Request>
+    <Response/>
+  </PreFlow>
+  <Flows>
+    <Flow name="AutoRoutingFlow">
+      <Description>2-step cascaded auto-routing: Step 1 via Gemini Decision 1 (&gt;= 70% confidence), Step 2 fallback via Gemini 3.5 Flash-Lite (&lt; 70% confidence)</Description>
+      <Request>
+        <Step>
+          <Name>LTQ-TokenEnforce</Name>
+        </Step>
+        <!-- Step 1: Fast zero-output-token prefill classification via Gemini Decision 1 -->
+        <Step>
+          <Name>AM-PrepStep1Decision</Name>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "")</Condition>
+        </Step>
+        <Step>
+          <Name>SC-Step1DecisionRouter</Name>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "")</Condition>
+        </Step>
+        <Step>
+          <Name>JS-EvaluateStep1</Name>
+        </Step>
+        <!-- Step 2: Disambiguation via Gemini 3.5 Flash-Lite ONLY when Step 1 confidence < 70% (or Step 1 unavailable) -->
+        <Step>
+          <Name>AM-PrepStep2FlashLite</Name>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.need_step2_router == "true")</Condition>
+        </Step>
+        <Step>
+          <Name>SC-Step2FlashLiteRouter</Name>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.need_step2_router == "true")</Condition>
+        </Step>
+        <!-- Final model selection from API Product routing.model.<category> -->
+        <Step>
+          <Name>JS-ResolveFinalRoute</Name>
+        </Step>
+        <Step>
+          <Name>RF-MissingRoutingConfig</Name>
+          <Condition>(flow.target_model == null) or (flow.target_model == "")</Condition>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(request.verb == "POST") and (flow.is_auto_route == "true")</Condition>
+    </Flow>
+    <Flow name="GeminiGenerateContent">
+      <Description>Direct Vertex AI Gemini generateContent and streamGenerateContent</Description>
+      <Request>
+        <Step>
+          <Name>LTQ-TokenEnforce</Name>
+        </Step>
+      </Request>
+      <Response/>
+      <Condition>(request.verb == "POST") and (flow.is_valid_gemini_path == "true")</Condition>
+    </Flow>
+    <Flow name="UnsupportedPath">
+      <Description>Reject unsupported paths or HTTP methods with 404</Description>
+      <Request>
+        <Step>
+          <Name>RF-UnsupportedPath</Name>
+        </Step>
+      </Request>
+      <Response/>
+    </Flow>
+  </Flows>
+  <PostFlow name="PostFlow">
+    <Request/>
+    <Response>
+      <Step>
+        <Name>EV-ModelResponse</Name>
+        <Condition>(response.status.code = 200) and (flow.is_streaming != "true")</Condition>
+      </Step>
+      <Step>
+        <Name>LTQ-TokenCount</Name>
+        <Condition>(response.status.code = 200) and (flow.is_streaming != "true")</Condition>
+      </Step>
+      <Step>
+        <Name>DC-ModelAnalytics</Name>
+        <Condition>(response.status.code = 200) and (flow.is_streaming != "true")</Condition>
+      </Step>
+      <Step>
+        <Name>AM-SetResponseHeaders</Name>
+      </Step>
+    </Response>
+  </PostFlow>
+  <PostClientFlow>
+    <Response>
+      <Step>
+        <Name>ML-CloudLogging</Name>
+      </Step>
+    </Response>
+  </PostClientFlow>
+  <DefaultFaultRule name="attribute-fault-analytics">
+    <AlwaysEnforce>true</AlwaysEnforce>
+    <Step>
+      <Name>DC-FaultAnalytics</Name>
+    </Step>
+  </DefaultFaultRule>
+  <HTTPProxyConnection>
+    <BasePath>/vertex-two-step/v1</BasePath>
+    <Properties>
+      <Property name="io.timeout.millis">300000</Property>
+    </Properties>
+  </HTTPProxyConnection>
+  <RouteRule name="gemini-stream-target">
+    <Condition>flow.is_streaming == "true"</Condition>
+    <TargetEndpoint>gemini-vertex-stream-target</TargetEndpoint>
+  </RouteRule>
+  <RouteRule name="gemini-target">
+    <TargetEndpoint>gemini-vertex-target</TargetEndpoint>
+  </RouteRule>
+</ProxyEndpoint>
