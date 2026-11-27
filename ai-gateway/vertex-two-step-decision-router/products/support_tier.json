@@ -16,10 +16,6 @@
       "value": "Support & Operations"
     },
     {
-      "name": "routing.confidence.threshold",
-      "value": "0.70"
-    },
-    {
       "name": "routing.model.coding",
       "value": "gemini-4-hydrogen"
     },

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-RouteCoding">
+  <DisplayName>AM-RouteCoding</DisplayName>
+  <AssignVariable>
+    <Name>flow.target_model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.coding</Ref>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.coding</Ref>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

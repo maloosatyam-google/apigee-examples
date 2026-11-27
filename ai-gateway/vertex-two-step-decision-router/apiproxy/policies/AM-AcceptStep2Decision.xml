@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="true" enabled="true" name="AM-AcceptStep2Decision">
+  <DisplayName>AM-AcceptStep2Decision</DisplayName>
+  <AssignVariable>
+    <Name>flow.step2Category</Name>
+    <Template>{jsonPath('$.category',flow.step2RawJson)}</Template>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerCategory</Name>
+    <Ref>flow.step2Category</Ref>
+    <Value>general</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerStep</Name>
+    <Value>step2-flash-lite</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerEngine</Name>
+    <Ref>flow.step2ModelVersion</Ref>
+    <Value>gemini-3.5-flash-lite</Value>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

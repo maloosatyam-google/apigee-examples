@@ -76,14 +76,14 @@ else
 fi
 rm -f "${HDR_F}" "${BODY_F}"
 
-log "4. Step 2 Escalation Path (Ambiguous / < threshold -> Gemini 3.5 Flash-Lite Tie-Breaker)"
+log "4. Step 2 Escalation Path (Ambiguous / < 70% threshold -> Gemini 3.5 Flash-Lite Tie-Breaker)"
 HDR_F="$(mktemp)"; BODY_F="$(mktemp)"
-# Raise threshold to 1.00 via x-router-confidence-threshold so Step 1 (< 1.00) deterministically escalates to Step 2
+# Pass x-force-step2: true so AutoRoutingFlow deterministically exercises the live Step 2 Flash-Lite callout
 CODE=$(curl -4 -s -D "${HDR_F}" -o "${BODY_F}" -w "%{http_code}" -X POST \
   "${BASE_URL}/models/auto:generateContent" \
   -H "Content-Type: application/json" \
   -H "x-apikey: ${ENG_KEY}" \
-  -H "x-router-confidence-threshold: 1.00" \
+  -H "x-force-step2: true" \
   -d '{"contents":[{"role":"user","parts":[{"text":"Draft a short team note explaining why our SQL index slowed down writes and include a 3-line CREATE INDEX snippet."}]}]}' || true)
 if [[ "${CODE}" == "200" ]]; then
   STEP_HDR="$(hdr x-gateway-router-step "${HDR_F}")"

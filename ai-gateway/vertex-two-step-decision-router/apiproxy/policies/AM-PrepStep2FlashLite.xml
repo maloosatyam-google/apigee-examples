@@ -7,7 +7,36 @@
       <Header name="Content-Type">application/json</Header>
     </Headers>
     <Verb>POST</Verb>
-    <Payload contentType="application/json">{flow.step2RequestBody}</Payload>
+    <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "You are the Step 2 tie-breaker router for an enterprise AI Gateway. Step 1 (Gemini Decision 1) was below the 0.70 confidence threshold (top_choice=@flow.step1Category:unavailable#, confidence=@flow.step1Confidence:0#, probabilities: coding=@flow.probCoding:0#, deep_reasoning=@flow.probDeepReasoning:0#, general=@flow.probGeneral:0#, simple=@flow.probSimple:0#). Analyze the user's primary intent and pick the single best routing category:\n- coding: Writing, debugging, reviewing, or refactoring code, SQL, regex, scripts, or API implementations.\n- deep_reasoning: Complex multi-step analysis, architecture trade-offs, formal proofs, math derivations, root-cause diagnosis, or strategic planning.\n- simple: Short greetings, factual trivia, brief definitions, single-sentence translations, or quick lookups.\n- general: Everyday writing, drafting emails/memos, summarization, brainstorming, and general conversation.\n\nUser request:\n@escapeJSON(flow.routerInput)#"
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "temperature": 0,
+    "maxOutputTokens": 64,
+    "thinkingConfig": {
+      "thinkingBudget": 0
+    },
+    "responseMimeType": "application/json",
+    "responseSchema": {
+      "type": "OBJECT",
+      "properties": {
+        "category": {
+          "type": "STRING",
+          "enum": ["coding", "deep_reasoning", "simple", "general"]
+        }
+      },
+      "required": ["category"]
+    }
+  }
+}</Payload>
   </Set>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </AssignMessage>

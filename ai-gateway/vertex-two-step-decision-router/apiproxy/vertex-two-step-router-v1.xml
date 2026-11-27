@@ -1,23 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <APIProxy revision="1" name="vertex-two-step-router-v1">
   <DisplayName>Vertex AI Gemini Gateway with 2-Step Decision Routing</DisplayName>
-  <Description>Apigee AI Gateway built on vertex-ai-v1 with 2-step cascaded auto-routing: Step 1 evaluates prompts via Gemini Decision 1 (0 output tokens), and ambiguous prompts below 70% confidence escalate to Gemini 3.5 Flash-Lite on Vertex AI for disambiguation.</Description>
+  <Description>Apigee AI Gateway built on vertex-ai-v1 with 100% native XML 2-step cascaded auto-routing: Step 1 evaluates prompts via Gemini Decision 1 (0 output tokens), and ambiguous prompts below 70% confidence escalate to Gemini 3.5 Flash-Lite on Vertex AI.</Description>
   <BasePaths>/vertex-two-step/v1</BasePaths>
   <Policies>
+    <Policy>AM-AcceptStep1Decision</Policy>
+    <Policy>AM-AcceptStep2Decision</Policy>
+    <Policy>AM-InitAutoRouting</Policy>
     <Policy>AM-PrepStep1Decision</Policy>
     <Policy>AM-PrepStep2FlashLite</Policy>
     <Policy>AM-RemoveAuthorization</Policy>
+    <Policy>AM-RouteCoding</Policy>
+    <Policy>AM-RouteDeepReasoning</Policy>
     <Policy>AM-RouteGeminiTarget</Policy>
+    <Policy>AM-RouteSimple</Policy>
     <Policy>AM-SetResponseHeaders</Policy>
     <Policy>DC-FaultAnalytics</Policy>
     <Policy>DC-ModelAnalytics</Policy>
     <Policy>EV-ExtractAPIKey</Policy>
     <Policy>EV-ModelResponse</Policy>
+    <Policy>EV-ParseStep1Decision</Policy>
+    <Policy>EV-ParseStep2FlashLite</Policy>
     <Policy>EV-RequestDetails</Policy>
-    <Policy>JS-EvaluateStep1</Policy>
     <Policy>JS-ExtractPromptAndModel</Policy>
     <Policy>JS-ProcessStreamEvent</Policy>
-    <Policy>JS-ResolveFinalRoute</Policy>
     <Policy>LTQ-TokenCount</Policy>
     <Policy>LTQ-TokenCountSSE</Policy>
     <Policy>LTQ-TokenEnforce</Policy>
@@ -33,10 +39,8 @@
     <ProxyEndpoint>default</ProxyEndpoint>
   </ProxyEndpoints>
   <Resources>
-    <Resource>jsc://EvaluateStep1.js</Resource>
     <Resource>jsc://ExtractPromptAndModel.js</Resource>
     <Resource>jsc://ProcessStreamEvent.js</Resource>
-    <Resource>jsc://ResolveFinalRoute.js</Resource>
   </Resources>
   <TargetEndpoints>
     <TargetEndpoint>gemini-vertex-stream-target</TargetEndpoint>

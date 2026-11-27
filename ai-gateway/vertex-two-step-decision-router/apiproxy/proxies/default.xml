@@ -25,12 +25,15 @@
   </PreFlow>
   <Flows>
     <Flow name="AutoRoutingFlow">
-      <Description>2-step cascaded auto-routing: Step 1 via Gemini Decision 1 (&gt;= 70% confidence), Step 2 fallback via Gemini 3.5 Flash-Lite (&lt; 70% confidence)</Description>
+      <Description>Native 2-step cascaded auto-routing: Step 1 via Gemini Decision 1 (&gt;= 0.70 confidence), Step 2 fallback via Gemini 3.5 Flash-Lite (&lt; 0.70 confidence)</Description>
       <Request>
         <Step>
           <Name>LTQ-TokenEnforce</Name>
         </Step>
-        <!-- Step 1: Fast zero-output-token prefill classification via Gemini Decision 1 -->
+        <Step>
+          <Name>AM-InitAutoRouting</Name>
+        </Step>
+        <!-- Step 1: Zero-output-token prefill classification via Gemini Decision 1 -->
         <Step>
           <Name>AM-PrepStep1Decision</Name>
           <Condition>(flow.routerInput != null) and (flow.routerInput != "")</Condition>
@@ -40,20 +43,42 @@
           <Condition>(flow.routerInput != null) and (flow.routerInput != "")</Condition>
         </Step>
         <Step>
-          <Name>JS-EvaluateStep1</Name>
+          <Name>EV-ParseStep1Decision</Name>
+          <Condition>routerStep1Response.status.code = 200</Condition>
         </Step>
-        <!-- Step 2: Disambiguation via Gemini 3.5 Flash-Lite ONLY when Step 1 confidence < 70% (or Step 1 unavailable) -->
+        <Step>
+          <Name>AM-AcceptStep1Decision</Name>
+          <Condition>(flow.step1Category != null) and (flow.step1Confidence != null) and (flow.step1Confidence &gt;= 0.70) and (request.header.x-force-step2 != "true")</Condition>
+        </Step>
+        <!-- Step 2: Disambiguation via Gemini 3.5 Flash-Lite ONLY when Step 1 was ambiguous (< 0.70) or unavailable -->
         <Step>
           <Name>AM-PrepStep2FlashLite</Name>
-          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.need_step2_router == "true")</Condition>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.step1Accepted != "true")</Condition>
         </Step>
         <Step>
           <Name>SC-Step2FlashLiteRouter</Name>
-          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.need_step2_router == "true")</Condition>
+          <Condition>(flow.routerInput != null) and (flow.routerInput != "") and (flow.step1Accepted != "true")</Condition>
         </Step>
-        <!-- Final model selection from API Product routing.model.<category> -->
         <Step>
-          <Name>JS-ResolveFinalRoute</Name>
+          <Name>EV-ParseStep2FlashLite</Name>
+          <Condition>(flow.step1Accepted != "true") and (routerStep2Response.status.code = 200)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-AcceptStep2Decision</Name>
+          <Condition>(flow.step1Accepted != "true") and (flow.step2RawJson != null) and (flow.step2RawJson != "")</Condition>
+        </Step>
+        <!-- Native API Product model resolution (general is pre-initialized in AM-InitAutoRouting) -->
+        <Step>
+          <Name>AM-RouteCoding</Name>
+          <Condition>(flow.routerCategory := "coding") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.coding != null)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-RouteDeepReasoning</Name>
+          <Condition>(flow.routerCategory := "deep_reasoning") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.deep_reasoning != null)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-RouteSimple</Name>
+          <Condition>(flow.routerCategory := "simple") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.simple != null)</Condition>
         </Step>
         <Step>
           <Name>RF-MissingRoutingConfig</Name>

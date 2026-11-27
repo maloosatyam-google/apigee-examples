@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-AcceptDecision">
+  <DisplayName>AM-AcceptDecision</DisplayName>
+  <AssignVariable>
+    <Name>flow.routerCategory</Name>
+    <Ref>flow.decisionCategory</Ref>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerEngine</Name>
+    <Value>gemini-decision-1</Value>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

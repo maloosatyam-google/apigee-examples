@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables continueOnError="true" enabled="true" name="EV-ParseStep1Decision">
+  <DisplayName>EV-ParseStep1Decision</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <JSONPayload>
+    <Variable name="step1Category">
+      <JSONPath>$.answers.category.choice</JSONPath>
+    </Variable>
+    <Variable name="step1Confidence">
+      <JSONPath>$.answers.category.confidence</JSONPath>
+    </Variable>
+    <Variable name="probCoding">
+      <JSONPath>$.answers.category.probabilities.coding</JSONPath>
+    </Variable>
+    <Variable name="probDeepReasoning">
+      <JSONPath>$.answers.category.probabilities.deep_reasoning</JSONPath>
+    </Variable>
+    <Variable name="probGeneral">
+      <JSONPath>$.answers.category.probabilities.general</JSONPath>
+    </Variable>
+    <Variable name="probSimple">
+      <JSONPath>$.answers.category.probabilities.simple</JSONPath>
+    </Variable>
+    <Variable name="routerComplexity">
+      <JSONPath>$.answers.complexity.score</JSONPath>
+    </Variable>
+    <Variable name="step1InputTokens">
+      <JSONPath>$.usage.total_input_tokens</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <Source clearPayload="false">routerStep1Response</Source>
+  <VariablePrefix>flow</VariablePrefix>
+</ExtractVariables>

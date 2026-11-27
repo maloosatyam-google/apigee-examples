@@ -7,9 +7,9 @@
       <Header name="Content-Type">application/json</Header>
     </Headers>
     <Verb>POST</Verb>
-    <Payload contentType="application/json">{
+    <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{
   "model": "gemini-decision-1",
-  "input": "{escapeJSON(flow.routerInput)}",
+  "input": "@escapeJSON(flow.routerInput)#",
   "questions": {
     "category": {
       "type": "choice",

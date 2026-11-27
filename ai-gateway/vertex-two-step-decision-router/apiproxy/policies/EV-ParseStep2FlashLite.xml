@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables continueOnError="true" enabled="true" name="EV-ParseStep2FlashLite">
+  <DisplayName>EV-ParseStep2FlashLite</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <JSONPayload>
+    <Variable name="step2RawJson">
+      <JSONPath>$.candidates[0].content.parts[-1].text</JSONPath>
+    </Variable>
+    <Variable name="step2Tokens">
+      <JSONPath>$.usageMetadata.totalTokenCount</JSONPath>
+    </Variable>
+    <Variable name="step2ModelVersion">
+      <JSONPath>$.modelVersion</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <Source clearPayload="false">routerStep2Response</Source>
+  <VariablePrefix>flow</VariablePrefix>
+</ExtractVariables>

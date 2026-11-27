@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-RouteDeepReasoning">
+  <DisplayName>AM-RouteDeepReasoning</DisplayName>
+  <AssignVariable>
+    <Name>flow.target_model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.deep_reasoning</Ref>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.deep_reasoning</Ref>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

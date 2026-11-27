@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AM-InitAutoRouting">
+  <DisplayName>AM-InitAutoRouting</DisplayName>
+  <AssignVariable>
+    <Name>flow.routingTier</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.name</Ref>
+    <Value>unknown</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerCategory</Name>
+    <Value>general</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerEngine</Name>
+    <Value>none</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerInputTokens</Name>
+    <Value>0</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.routerOutputTokens</Name>
+    <Value>0</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.target_model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.general</Ref>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.model</Name>
+    <Ref>verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.general</Ref>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>flow.autoRouted</Name>
+    <Value>true</Value>
+  </AssignVariable>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

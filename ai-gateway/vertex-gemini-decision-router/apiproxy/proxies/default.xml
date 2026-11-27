@@ -25,10 +25,13 @@
   </PreFlow>
   <Flows>
     <Flow name="AutoRoutingFlow">
-      <Description>Intelligent auto-routing via Google Gemini Decision 1 (gemini-decision-1) and API Product custom attributes</Description>
+      <Description>Native XML auto-routing via Google Gemini Decision 1 (gemini-decision-1) and API Product custom attributes</Description>
       <Request>
         <Step>
           <Name>LTQ-TokenEnforce</Name>
+        </Step>
+        <Step>
+          <Name>AM-InitAutoRouting</Name>
         </Step>
         <Step>
           <Name>AM-PrepRouterRequest</Name>
@@ -39,7 +42,24 @@
           <Condition>(flow.routerInput != null) and (flow.routerInput != "")</Condition>
         </Step>
         <Step>
-          <Name>JS-AutoRouting</Name>
+          <Name>EV-ParseDecisionResponse</Name>
+          <Condition>routerResponse.status.code = 200</Condition>
+        </Step>
+        <Step>
+          <Name>AM-AcceptDecision</Name>
+          <Condition>(flow.decisionCategory != null) and (flow.routerConfidence != null) and (flow.routerConfidence &gt;= 0.55)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-RouteCoding</Name>
+          <Condition>(flow.routerCategory := "coding") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.coding != null)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-RouteDeepReasoning</Name>
+          <Condition>(flow.routerCategory := "deep_reasoning") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.deep_reasoning != null)</Condition>
+        </Step>
+        <Step>
+          <Name>AM-RouteSimple</Name>
+          <Condition>(flow.routerCategory := "simple") and (verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.simple != null)</Condition>
         </Step>
         <Step>
           <Name>RF-MissingRoutingConfig</Name>

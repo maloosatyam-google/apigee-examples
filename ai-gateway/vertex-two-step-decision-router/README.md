@@ -1,9 +1,25 @@
 # Vertex AI Gemini Gateway with 2-Step Cascaded Decision Routing
 
-An **Apigee X AI Gateway** example built on the **`vertex-ai-v1`** base implementing a **two-step confidence-cascaded model router**:
+An **Apigee X AI Gateway** example built on the **`vertex-ai-v1`** base implementing a **100% native XML two-step confidence-cascaded model router** (zero JavaScript in `AutoRoutingFlow`):
 
-1. **Step 1 — Ultra-Fast Calibrated Prefill (`gemini-decision-1`, `0` output tokens)**: Evaluates every `/models/auto` prompt in a single forward pass via the Gemini Decisions API (`POST /v1beta/decisions`). When **confidence is `>= 70%` (`0.70`)**, Apigee routes immediately with zero generative router overhead.
-2. **Step 2 — Ambiguity Tie-Breaker (`gemini-3.5-flash-lite` on Vertex AI, `< 70%` confidence)**: Only when a prompt is ambiguous (`confidence < 0.70`) or Step 1 is unavailable, Apigee invokes `gemini-3.5-flash-lite` with structured JSON output — passing **Step 1's calibrated probability distribution as prior context** — to make the final routing decision.
+1. **Step 1 — Ultra-Fast Calibrated Prefill (`gemini-decision-1`, `0` output tokens)**: Evaluates every `/models/auto` prompt in a single forward pass via the Gemini Decisions API (`POST /v1beta/decisions`). `EV-ParseStep1Decision` extracts `choice` and `confidence`, and a native Apigee `<Condition>` (`flow.step1Confidence >= 0.70`) accepts high-confidence classifications immediately.
+2. **Step 2 — Ambiguity Tie-Breaker (`gemini-3.5-flash-lite` on Vertex AI, `< 70%` confidence)**: Only when `flow.step1Accepted != "true"` (ambiguous prompt `< 0.70` or Step 1 unavailable), `AM-PrepStep2FlashLite` and `SC-Step2FlashLiteRouter` invoke `gemini-3.5-flash-lite:generateContent` with Step 1's calibrated probability split embedded as prior context, and `AM-AcceptStep2Decision` extracts the category via `{jsonPath('$.category',flow.step2RawJson)}`.
+
+---
+
+## Native Apigee Policies vs. JavaScript Design Review
+
+Following Apigee X best practices (*prefer built-in XML policies over script callouts*), **all routing, JSON extraction, confidence gating, and API Product model resolution use native policies**:
+
+| Responsibility | Implementation | Why Native / Why JS? |
+|---|---|---|
+| **Step 1 JSON extraction** | `EV-ParseStep1Decision` (`ExtractVariables`) | Native JSONPath (`$.answers.category.choice`, `$.answers.category.confidence`, `$.answers.category.probabilities.*`) — faster & visible in Apigee Trace |
+| **70% Confidence gate** | Native `<Condition>` (`flow.step1Confidence >= 0.70`) | Built-in Apigee numeric comparison skips Step 2 policies declaratively |
+| **Step 2 JSON request build** | `AM-PrepStep2FlashLite` (`AssignMessage`) | Native message templates (`{escapeJSON(flow.routerInput)}`, `{flow.probCoding:0}`) build the Vertex AI payload with zero JS |
+| **Step 2 JSON extraction** | `EV-ParseStep2FlashLite` + `{jsonPath('$.category',flow.step2RawJson)}` | Native `ExtractVariables` + `AssignMessage` template function |
+| **Persona model lookup** | `AM-InitAutoRouting` + `AM-RouteCoding` / `AM-RouteDeepReasoning` / `AM-RouteSimple` | Native `<AssignVariable><Ref>` binds `verifyapikey.VA-VerifyAPIKey.apiproduct.routing.model.*` directly |
+| **Multi-turn prompt windowing** | `JS-ExtractPromptAndModel` *(from `vertex-ai-v1`)* | Retained in JS: joins `systemInstruction` + multi-turn `contents[*].parts[*]`, filters out `thought: true` blocks, and safely windows >8,000-char prompts (head + tail) |
+| **SSE chunk completion** | `JS-ProcessStreamEvent` *(from `vertex-ai-v1`)* | Mandatory JS: Apigee X `<EventFlow>` forbids `ExtractVariables` and `AssignMessage` |
 
 ---
 
@@ -12,27 +28,19 @@ An **Apigee X AI Gateway** example built on the **`vertex-ai-v1`** base implemen
 ```mermaid
 flowchart LR
     Client["Client / SDK<br/>POST /models/auto:*"] --> Apigee["Apigee X<br/>VerifyAPIKey · SpikeArrest · LLMTokenQuota"]
-    Apigee --> Step1["Step 1: Gemini Decision 1<br/>POST /v1beta/decisions<br/>(0 output tokens)"]
-    Step1 --> Gate{"Confidence >= 70%?<br/>(routing.confidence.threshold)"}
-    Gate -->|"Yes (Fast Path)"| Resolve["Resolve API Product<br/>routing.model.&lt;category&gt;"]
-    Gate -->|"No (< 0.70 Ambiguous)"| Step2["Step 2: Gemini 3.5 Flash-Lite<br/>Vertex AI :generateContent<br/>(with Step 1 probabilities)"]
+    Apigee --> Step1["Step 1: SC-Step1DecisionRouter<br/>Gemini Decision 1 (/v1beta/decisions)<br/>EV-ParseStep1Decision (0 output tokens)"]
+    Step1 --> Gate{"Native &lt;Condition&gt;<br/>step1Confidence &gt;= 0.70?"}
+    Gate -->|"Yes (AM-AcceptStep1Decision)"| Resolve["Native AM-Route*<br/>verifyapikey...routing.model.&lt;cat&gt;"]
+    Gate -->|"No (&lt; 0.70 Ambiguous)"| Step2["Step 2: SC-Step2FlashLiteRouter<br/>Vertex AI gemini-3.5-flash-lite<br/>EV-ParseStep2FlashLite + jsonPath()"]
     Step2 --> Resolve
     Resolve --> Target["Vertex AI Gemini Target<br/>(Buffered or SSE Stream)<br/>Carbon / Argon / Hydrogen / Flash-Lite"]
 ```
-
-### Why a 2-Step Confidence Cascade?
-
-| Traffic Segment | Router Executed | Output Tokens Paid | Why It Wins |
-|---|---|---|---|
-| **Clear prompts (~85–90% of traffic)** — e.g. *"Write a Python quicksort"*, *"Hi!"*, *"Prove consensus safety under WAN partitions"* | **Step 1 only** (`gemini-decision-1`) | **`0` tokens** | Single prefill pass, lowest latency, calibrated probability `>= 0.70` |
-| **Ambiguous / multi-intent prompts (~10–15% of traffic)** — e.g. *"Draft a short note explaining why our SQL index slowed down writes and include a 3-line snippet"* | **Step 1 → Step 2** (`gemini-3.5-flash-lite`) | **~6 JSON tokens** | Step 2 reasons over user intent + Step 1's probability split (`coding` vs `general` vs `deep_reasoning`) instead of guessing blindly |
-| **Step 1 outage / timeout** | **Step 2 automatic failover** (`gemini-3.5-flash-lite`) | **~6 JSON tokens** | Built-in high availability across `generativelanguage.googleapis.com` and `aiplatform.googleapis.com` |
 
 ---
 
 ## Persona API Product Routing Matrix
 
-Both API Products ship in [`products/`](products/) with `routing.confidence.threshold = "0.70"`:
+Both API Products ship in [`products/`](products/) and work against the exact same proxy revision:
 
 | Final Category | `vertex-two-step-engineering` (`engineering_tier.json`) | `vertex-two-step-support` (`support_tier.json`) |
 |---|---|---|
@@ -41,7 +49,7 @@ Both API Products ship in [`products/`](products/) with `routing.confidence.thre
 | **`general`** | `gemini-4-hydrogen` | `gemini-3.5-flash-lite` |
 | **`simple`** | `gemini-3.5-flash-lite` | `gemini-3.5-flash-lite` |
 
-> **Per-request stricter threshold (for evals & testing):** Callers can pass `x-router-confidence-threshold: 0.90` (or `1.00` in integration tests to deterministically exercise Step 2). For safety, the proxy only allows the header to **raise** strictness above the API Product's `0.70` floor, never lower it.
+> **Deterministic Step 2 testing:** Pass `-H "x-force-step2: true"` on any `/models/auto` request in evals or integration tests to bypass `AM-AcceptStep1Decision` and exercise the live Step 2 `gemini-3.5-flash-lite` disambiguation path.
 
 ---
 
@@ -89,13 +97,6 @@ From the repository root:
 
 ```bash
 make all
-```
-
-Or directly inside this example directory:
-
-```bash
-python3 ../../scripts/validate_bundle.py . --strict
-node --test tests/two_step_routing.test.mjs
 ```
 
 ### 2. Deploy to an Existing Apigee X Organization

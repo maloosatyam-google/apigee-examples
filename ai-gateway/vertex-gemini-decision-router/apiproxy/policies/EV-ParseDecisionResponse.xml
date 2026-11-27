@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtractVariables continueOnError="true" enabled="true" name="EV-ParseDecisionResponse">
+  <DisplayName>EV-ParseDecisionResponse</DisplayName>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <JSONPayload>
+    <Variable name="decisionCategory">
+      <JSONPath>$.answers.category.choice</JSONPath>
+    </Variable>
+    <Variable name="routerConfidence">
+      <JSONPath>$.answers.category.confidence</JSONPath>
+    </Variable>
+    <Variable name="routerComplexity">
+      <JSONPath>$.answers.complexity.score</JSONPath>
+    </Variable>
+    <Variable name="routerInputTokens">
+      <JSONPath>$.usage.total_input_tokens</JSONPath>
+    </Variable>
+    <Variable name="routerOutputTokens">
+      <JSONPath>$.usage.total_output_tokens</JSONPath>
+    </Variable>
+  </JSONPayload>
+  <Source clearPayload="false">routerResponse</Source>
+  <VariablePrefix>flow</VariablePrefix>
+</ExtractVariables>

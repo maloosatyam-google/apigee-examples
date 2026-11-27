@@ -11,7 +11,7 @@ Callers send prompts to a single `/models/auto:generateContent` or `/models/auto
 | Capability | What It Solves | Apigee Policies Behind the Scenes |
 |---|---|---|
 | **Single gateway key (zero GCP credentials on clients)** | Apps & IDEs authenticate with a revocable Apigee key while Apigee signs into Gemini Decision 1 & Vertex AI via IAM | `EV-ExtractAPIKey` + `VA-VerifyAPIKey` + `AM-RemoveAuthorization` + `<GoogleAccessToken>` |
-| **Zero-output-token smart routing (`/models/auto`)** | Routes greetings/lookups to cheap Flash-Lite, everyday chat to Hydrogen, coding to Argon, and hard reasoning/proofs to Carbon | `AM-PrepRouterRequest` + `SC-ModelRouter` (`gemini-decision-1`) + `JS-AutoRouting` |
+| **Zero-output-token smart routing (`/models/auto`)** | Routes greetings/lookups to cheap Flash-Lite, everyday chat to Hydrogen, coding to Argon, and hard reasoning/proofs to Carbon using 100% native XML policies | `AM-PrepRouterRequest` + `SC-ModelRouter` (`gemini-decision-1`) + `EV-ParseDecisionResponse` + `AM-AcceptDecision` + `AM-Route*` |
 | **Per-team model tiers without proxy redeployments** | Engineering & Support can call the exact same `/models/auto` endpoint and land on different model tiers based on their API key | API Product custom attributes (`routing.model.<category>`, `routing.confidence.min`) |
 | **Traffic spike & token budget enforcement** | Stops runaway client loops before calling either the router or Vertex AI, and counts tokens across buffered & SSE streams | `SA-SpikeArrest` + `LTQ-TokenEnforce` / `LTQ-TokenCount` / `LTQ-TokenCountSSE` |
 | **Buffered & live SSE streaming parity** | Dedicated buffered and 300s SSE streaming targets prevent buffering delays while capturing unified analytics & Cloud Logs | `gemini-vertex-target` + `gemini-vertex-stream-target` (`<EventFlow>`) + `DC-ModelAnalytics` + `ML-CloudLogging` |
@@ -33,7 +33,7 @@ sequenceDiagram
     Note over Apigee: 2. LLMTokenQuota (EnforceOnly on "auto")
     Apigee->>Decision: POST /v1beta/decisions (choice: category + score: complexity)
     Decision-->>Apigee: Calibrated probabilities + confidence (0 output tokens)
-    Note over Apigee: 3. JS-AutoRouting resolves API Product<br/>routing.model.<category> (with confidence check)
+    Note over Apigee: 3. Native EV-ParseDecisionResponse + AM-Route*<br/>resolves API Product routing.model.<category>
     Apigee->>Vertex: POST .../models/{flow.target_model}:generateContent (or :streamGenerateContent?alt=sse)
     Vertex-->>Apigee: Response / SSE Stream
     Note over Apigee: 4. LLMTokenQuota (CountOnly on "auto"),<br/>DataCapture (target_model), CloudLogging
@@ -48,7 +48,7 @@ Traditional LLM routers call `:generateContent` with a JSON schema, paying outpu
 
 1. **Zero output tokens (`total_output_tokens: 0`)**: Evaluates all questions in a single prefill pass.
 2. **Parallel multi-question scoring**: `AM-PrepRouterRequest.xml` evaluates both `category` (`choice`) and `complexity` (`score`, 0–3 rubric) simultaneously in one request with flat latency.
-3. **Calibrated probabilities & confidence gating**: Returns `confidence` (`0.0`–`1.0`). When confidence falls below the API Product's `routing.confidence.min` (default `0.55`), `AutoRouting.js` safely routes to `routing.model.general`.
+3. **Calibrated probabilities & confidence gating**: Returns `confidence` (`0.0`–`1.0`). When confidence falls below `0.55`, a native Apigee `<Condition>` safely keeps `routing.model.general`.
 4. **Keyless GCP IAM authentication**: `SC-ModelRouter.xml` calls `https://generativelanguage.googleapis.com/v1beta/decisions` using Apigee's native `<GoogleAccessToken>` (`generative-language` + `cloud-platform` scopes) — no API keys or KVMs to rotate.
 
 ### Persona API Product Routing Matrix
