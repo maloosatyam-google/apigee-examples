@@ -1,0 +1,82 @@
+[
+  {
+    "id": "step1-simple-lookup",
+    "title": "Simple lookup (Step 1 >= 70% fast path)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Hi! What is the capital city of Japan and what currency do they use?",
+    "expected_step": "step1-decision-1",
+    "expected_category": "simple",
+    "expected_model": "gemini-3.5-flash-lite"
+  },
+  {
+    "id": "step1-general-writing",
+    "title": "General writing (Step 1 >= 70% fast path)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Draft a concise 3-bullet status update email for stakeholders summarizing our Q3 API platform rollout.",
+    "expected_step": "step1-decision-1",
+    "expected_category": "general",
+    "expected_model": "gemini-4-hydrogen"
+  },
+  {
+    "id": "step1-coding-engineering",
+    "title": "Coding on Engineering persona (-> Argon)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Write a Python function implementing binary search on a sorted list with type annotations.",
+    "expected_step": "step1-decision-1",
+    "expected_category": "coding",
+    "expected_model": "gemini-4-argon"
+  },
+  {
+    "id": "step1-coding-support",
+    "title": "Same coding prompt on Support (-> Hydrogen)",
+    "persona": "support",
+    "stream": false,
+    "prompt": "Write a Python function implementing binary search on a sorted list with type annotations.",
+    "expected_step": "step1-decision-1",
+    "expected_category": "coding",
+    "expected_model": "gemini-4-hydrogen"
+  },
+  {
+    "id": "step1-deep-reasoning",
+    "title": "Deep reasoning (-> Carbon)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Analyze CAP theorem and consensus latency trade-offs between multi-region Spanner TrueTime and Raft quorum replication under asymmetric network partitions, and derive a formal availability bound.",
+    "expected_step": "step1-decision-1",
+    "expected_category": "deep_reasoning",
+    "expected_model": "gemini-4-carbon"
+  },
+  {
+    "id": "step2-ambiguous-exec-webhook",
+    "title": "Ambiguous exec+curl prompt (< 70% -> Step 2)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Summarize in two sentences for leadership whether switching from REST polling to event webhooks is worth the effort, and give a one-line curl example.",
+    "expected_step": "step2-flash-lite",
+    "expected_category": null,
+    "expected_model": null
+  },
+  {
+    "id": "step2-ambiguous-slack-sql",
+    "title": "Ambiguous Slack+SQL prompt (< 70% -> Step 2)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Draft a brief Slack note explaining why our checkout SQL query slowed down and include a 2-line CREATE INDEX snippet.",
+    "expected_step": "step2-flash-lite",
+    "expected_category": "coding",
+    "expected_model": "gemini-4-argon"
+  },
+  {
+    "id": "sse-streaming-two-step",
+    "title": "SSE streaming auto-routed request",
+    "persona": "engineering",
+    "stream": true,
+    "prompt": "Count from 1 to 4, one number per line.",
+    "expected_step": "step1-decision-1",
+    "expected_category": "simple",
+    "expected_model": "gemini-3.5-flash-lite"
+  }
+]

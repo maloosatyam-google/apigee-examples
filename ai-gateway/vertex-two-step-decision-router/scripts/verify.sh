@@ -76,15 +76,14 @@ else
 fi
 rm -f "${HDR_F}" "${BODY_F}"
 
-log "4. Step 2 Escalation Path (Ambiguous / < 70% threshold -> Gemini 3.5 Flash-Lite Tie-Breaker)"
+log "4. Step 2 Natural Ambiguity Escalation (< 70% confidence -> Gemini 3.5 Flash-Lite Tie-Breaker)"
 HDR_F="$(mktemp)"; BODY_F="$(mktemp)"
-# Pass x-force-step2: true so AutoRoutingFlow deterministically exercises the live Step 2 Flash-Lite callout
+# Multi-intent prompt (Slack memo + SQL diagnosis + snippet) naturally scores ~0.45 confidence on Step 1 (< 0.70)
 CODE=$(curl -4 -s -D "${HDR_F}" -o "${BODY_F}" -w "%{http_code}" -X POST \
   "${BASE_URL}/models/auto:generateContent" \
   -H "Content-Type: application/json" \
   -H "x-apikey: ${ENG_KEY}" \
-  -H "x-force-step2: true" \
-  -d '{"contents":[{"role":"user","parts":[{"text":"Draft a short team note explaining why our SQL index slowed down writes and include a 3-line CREATE INDEX snippet."}]}]}' || true)
+  -d '{"contents":[{"role":"user","parts":[{"text":"Draft a short team note explaining why our SQL index slowed down writes and include a 3-line CREATE INDEX snippet."}]}],"generationConfig":{"maxOutputTokens":128}}' || true)
 if [[ "${CODE}" == "200" ]]; then
   STEP_HDR="$(hdr x-gateway-router-step "${HDR_F}")"
   ENG_HDR="$(hdr x-gateway-router-engine "${HDR_F}")"

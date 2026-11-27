@@ -86,7 +86,8 @@ fi
 
 [[ -n "${ORG}" ]] || { echo "Error: --org or APIGEE_ORG is required for live deployment." >&2; exit 1; }
 PROJECT="${GCP_PROJECT_ID:-${ORG}}"
-TOKEN="${GOOGLE_OAUTH_ACCESS_TOKEN:-$(gcloud auth print-access-token)}"
+TOKEN="${GOOGLE_OAUTH_ACCESS_TOKEN:-$(gcloud auth print-access-token 2>/dev/null || gcloud auth application-default print-access-token)}"
+export CLOUDSDK_AUTH_ACCESS_TOKEN="${TOKEN}"
 APIGEE_API="https://apigee.googleapis.com/v1/organizations/${ORG}"
 
 apigee_call() {
@@ -250,7 +251,8 @@ cat <<EOF
     -d '{"contents":[{"role":"user","parts":[{"text":"Write a Python binary search function with type hints."}]}]}' \\
     | grep -iE "^(HTTP/|x-auto-routed|x-gateway-)"
 
-  Run full live verification suite (tests Step 1 + Step 2 escalation + SSE):
+  Run sample prompt test suite & full verification (tests Step 1 + Step 2 escalation + SSE):
+  APIGEE_HOST="${HOST:-<APIGEE_HOST>}" ENG_API_KEY="${ENG_KEY}" SUP_API_KEY="${SUP_KEY}" ./scripts/test_samples.sh
   APIGEE_HOST="${HOST:-<APIGEE_HOST>}" ENG_API_KEY="${ENG_KEY}" SUP_API_KEY="${SUP_KEY}" ./scripts/verify.sh
 ================================================================================
 EOF

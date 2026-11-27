@@ -1,0 +1,56 @@
+[
+  {
+    "id": "simple-greeting-lookup",
+    "title": "Simple factual lookup",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Hi! What is the capital city of Japan and what currency do they use?",
+    "expected_category": "simple",
+    "expected_model": "gemini-3.5-flash-lite"
+  },
+  {
+    "id": "general-email-draft",
+    "title": "General business writing",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Draft a concise 3-bullet status update email for stakeholders summarizing our Q3 API platform rollout.",
+    "expected_category": "general",
+    "expected_model": "gemini-4-hydrogen"
+  },
+  {
+    "id": "coding-engineering-tier",
+    "title": "Coding (Engineering persona -> Argon)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Write a Python function implementing binary search on a sorted list with type annotations.",
+    "expected_category": "coding",
+    "expected_model": "gemini-4-argon"
+  },
+  {
+    "id": "coding-support-tier",
+    "title": "Same coding prompt (Support persona -> Hydrogen)",
+    "persona": "support",
+    "stream": false,
+    "prompt": "Write a Python function implementing binary search on a sorted list with type annotations.",
+    "expected_category": "coding",
+    "expected_model": "gemini-4-hydrogen"
+  },
+  {
+    "id": "deep-reasoning-architecture",
+    "title": "Deep architectural reasoning (-> Carbon)",
+    "persona": "engineering",
+    "stream": false,
+    "prompt": "Analyze CAP theorem and consensus latency trade-offs between multi-region Spanner TrueTime and Raft quorum replication under asymmetric network partitions, and derive a formal availability bound.",
+    "expected_category": "deep_reasoning",
+    "expected_model": "gemini-4-carbon"
+  },
+  {
+    "id": "sse-streaming-auto-route",
+    "title": "SSE streaming auto-routed request",
+    "persona": "engineering",
+    "stream": true,
+    "prompt": "List 3 benefits of an AI Gateway in one short sentence each.",
+    "expected_category": null,
+    "expected_model": null
+  }
+]

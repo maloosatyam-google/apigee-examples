@@ -144,9 +144,15 @@ curl -sS -X POST "https://${APIGEE_HOST}/vertex-router/v1/models/gemini-4-hydrog
   }'
 ```
 
-### 4. Run the Automated Live Verification Suite
+### 4. Run Customer Sample Prompts & Automated Verification
+
+[`tests/sample_prompts.json`](tests/sample_prompts.json) includes ready-to-run prompts across `simple`, `general`, `coding` (Engineering vs Support personas), `deep_reasoning`, and SSE streaming. Edit that JSON file to test your own prompts:
 
 ```bash
+# Run the visual sample prompt table (auto-discovers keys if APIGEE_ORG is in .env)
+./scripts/test_samples.sh
+
+# Run full gateway verification assertions (auth, 404, direct, auto-routed, SSE, personas)
 APIGEE_HOST="${APIGEE_HOST}" ENG_API_KEY="${ENG_API_KEY}" SUP_API_KEY="${SUP_API_KEY}" ./scripts/verify.sh
 ```
 

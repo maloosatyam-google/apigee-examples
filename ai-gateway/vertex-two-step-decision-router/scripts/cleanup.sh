@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "${ORG}" ]] || { echo "Error: --org or APIGEE_ORG is required." >&2; exit 1; }
-TOKEN="${GOOGLE_OAUTH_ACCESS_TOKEN:-$(gcloud auth print-access-token)}"
+TOKEN="${GOOGLE_OAUTH_ACCESS_TOKEN:-$(gcloud auth print-access-token 2>/dev/null || gcloud auth application-default print-access-token)}"
 APIGEE_API="https://apigee.googleapis.com/v1/organizations/${ORG}"
 
 echo "==> Cleaning up sample apps, products, and proxy '${PROXY_NAME}' in '${ORG}' (${ENV})..."

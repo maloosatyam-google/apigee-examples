@@ -108,10 +108,49 @@ cp .env.example .env
 ./scripts/deploy.sh
 ```
 
-### 3. Run the Live Verification Suite (Tests Step 1, Step 2 Escalation & SSE)
+### 3. Test Sample Prompts Yourself (`test_samples.sh` & `curl`)
+
+[`tests/sample_prompts.json`](tests/sample_prompts.json) ships with 8 live-verified sample test cases covering both the **Step 1 fast path (`>= 70%`)** and **naturally ambiguous multi-intent prompts (`< 70%` -> Step 2 `gemini-3.5-flash-lite`)**, persona routing (`Engineering` vs `Support`), and SSE streaming. You can also add your own prompts directly to [`tests/sample_prompts.json`](tests/sample_prompts.json):
 
 ```bash
+# Run all 8 sample cases and print a routing & confidence telemetry table
+./scripts/test_samples.sh
+
+# Run the automated verification assertions
 APIGEE_HOST="${APIGEE_HOST}" ENG_API_KEY="${ENG_API_KEY}" SUP_API_KEY="${SUP_API_KEY}" ./scripts/verify.sh
+```
+
+Sample live output from `./scripts/test_samples.sh`:
+
+```text
+#   Scenario                               Step1 (Conf)          Step Used          Final Cat       Routed Model         Status
+--------------------------------------------------------------------------------------------------------------------------------
+1   Simple lookup (Step 1 >= 70% fast pat  simple (0.94)         step1-decision-1   simple          gemini-3.5-flash-lite PASS
+2   General writing (Step 1 >= 70% fast p  general (0.98)        step1-decision-1   general         gemini-4-hydrogen    PASS
+3   Coding on Engineering persona (-> Arg  coding (0.99)         step1-decision-1   coding          gemini-4-argon       PASS
+4   Same coding prompt on Support (-> Hyd  coding (0.99)         step1-decision-1   coding          gemini-4-hydrogen    PASS
+5   Deep reasoning (-> Carbon)             deep_reasoning (0.99) step1-decision-1   deep_reasoning  gemini-4-carbon      PASS
+6   Ambiguous exec+curl prompt (< 70% ->   deep_reasoning (0.40) step2-flash-lite   deep_reasoning  gemini-4-carbon      PASS
+7   Ambiguous Slack+SQL prompt (< 70% ->   coding (0.45)         step2-flash-lite   coding          gemini-4-argon       PASS
+8   SSE streaming auto-routed request      simple (0.98)         step1-decision-1   simple          gemini-3.5-flash-lite PASS
+```
+
+Or test individual scenarios with `curl`:
+
+```bash
+# A) Clear prompt (>= 70% confidence -> Step 1 Gemini Decision 1 fast path, 0 Step 2 tokens)
+curl -si -X POST "https://${APIGEE_HOST}/vertex-two-step/v1/models/auto:generateContent" \
+  -H "Content-Type: application/json" \
+  -H "x-apikey: ${ENG_API_KEY}" \
+  -d '{"contents":[{"role":"user","parts":[{"text":"Write a Python binary search function with type annotations."}]}]}' \
+  | grep -iE "^(HTTP/|x-auto-routed|x-gateway-)"
+
+# B) Naturally ambiguous multi-intent prompt (~0.45 confidence < 70% -> escalates to Step 2 Gemini 3.5 Flash-Lite)
+curl -si -X POST "https://${APIGEE_HOST}/vertex-two-step/v1/models/auto:generateContent" \
+  -H "Content-Type: application/json" \
+  -H "x-apikey: ${ENG_API_KEY}" \
+  -d '{"contents":[{"role":"user","parts":[{"text":"Draft a brief Slack note explaining why our checkout SQL query slowed down and include a 2-line CREATE INDEX snippet."}]}]}' \
+  | grep -iE "^(HTTP/|x-auto-routed|x-gateway-)"
 ```
 
 ### 4. Optional: Python 2-Step Playground (`google-genai >= 3.5.0`)

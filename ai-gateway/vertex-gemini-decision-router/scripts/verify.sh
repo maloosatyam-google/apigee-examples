@@ -35,8 +35,10 @@ CODE=$(curl -4 -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/models/aut
 [[ "${CODE}" == "401" ]] && pass "Rejected unauthenticated request with HTTP 401" || fail "Expected HTTP 401, got ${CODE}"
 
 log "2. Unsupported Path Rejection (expect HTTP 404)"
-CODE=$(curl -4 -s -o /dev/null -w "%{http_code}" -X GET "${BASE_URL}/unknown/route" \
-  -H "x-apikey: ${ENG_KEY}" || true)
+CODE=$(curl -4 -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/unknown/route" \
+  -H "Content-Type: application/json" \
+  -H "x-apikey: ${ENG_KEY}" \
+  -d '{}' || true)
 [[ "${CODE}" == "404" ]] && pass "Rejected unsupported route with HTTP 404" || fail "Expected HTTP 404, got ${CODE}"
 
 log "3. Direct Vertex AI Gemini Buffered Call (/models/gemini-4-hydrogen:generateContent)"
@@ -69,7 +71,7 @@ check_auto_route() {
     "${BASE_URL}/models/auto:generateContent" \
     -H "Content-Type: application/json" \
     -H "x-apikey: ${ENG_KEY}" \
-    -d "{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"${prompt}\"}]}]}" || true)
+    -d "{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"${prompt}\"}]}],\"generationConfig\":{\"maxOutputTokens\":128}}" || true)
   if [[ "${code}" == "200" ]]; then
     cat_h="$(hdr x-gateway-router-category "${hf}")"
     mod_h="$(hdr x-gateway-model "${hf}")"
